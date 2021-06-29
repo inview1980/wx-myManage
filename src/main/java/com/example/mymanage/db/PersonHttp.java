@@ -1,14 +1,15 @@
 package com.example.mymanage.db;
 
-import com.example.mymanage.tool.TimedTask;
 import com.example.mymanage.http.Result;
 import com.example.mymanage.iface.IPersonDB;
 import com.example.mymanage.iface.IWriteToDB;
 import com.example.mymanage.pojo.PersonDetails;
-import com.example.mymanage.http.HttpUtil;
+import com.example.mymanage.tool.FileDBUtil;
+import com.example.mymanage.tool.TimedTask;
 import lombok.NonNull;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
@@ -20,7 +21,8 @@ public class PersonHttp implements IPersonDB, IWriteToDB {
     @Override@Synchronized
     public List<PersonDetails> getAllList() {
         if (personDetailsList == null) {
-            personDetailsList = HttpUtil.getListFromDB(PersonDetails.class, TableName);
+//            personDetailsList = HttpUtil.getListFromDB(PersonDetails.class, TableName);
+            personDetailsList = FileDBUtil.getListFromDB(PersonDetails.class);
         }
         return personDetailsList;
     }
@@ -75,7 +77,7 @@ public class PersonHttp implements IPersonDB, IWriteToDB {
 
     @Override
     public boolean writeToDB() {
-        return HttpUtil.writeToDB(personDetailsList, TableName);
+        return FileDBUtil.writeToDB(personDetailsList);//HttpUtil.writeToDB(personDetailsList, TableName);
     }
 
     @Override

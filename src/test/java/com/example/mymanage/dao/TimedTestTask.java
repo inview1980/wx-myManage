@@ -1,7 +1,6 @@
 package com.example.mymanage.dao;
 
 import com.example.mymanage.MainApplication;
-import com.example.mymanage.http.HttpUtil;
 import com.example.mymanage.tool.ReadExcel;
 import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
@@ -28,9 +27,9 @@ public class TimedTestTask extends TestCase {
 
     @Test
     public void upLoadFile() throws IOException, CloneNotSupportedException {
-//        String fileId=HttpUtil.upLoadFile(new FileInputStream("F:/db1.xlsx"));
-        String fileId=HttpUtil.upLoadFile(excel.saveDB2File());
-        assertNotNull(fileId);
-        log.info(fileId);
+//        String fileId=HttpUtil.upLoadFile(new FileInputStream("F:/db.xlsx"));
+//        String fileId=HttpUtil.upLoadFile(excel.saveDB2File());
+//        assertNotNull(fileId);
+//        log.info(fileId);
     }
 }

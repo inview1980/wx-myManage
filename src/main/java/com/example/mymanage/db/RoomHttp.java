@@ -1,9 +1,9 @@
 package com.example.mymanage.db;
 
-import com.example.mymanage.http.HttpUtil;
 import com.example.mymanage.iface.IRoomDB;
 import com.example.mymanage.iface.IWriteToDB;
 import com.example.mymanage.pojo.RoomDetails;
+import com.example.mymanage.tool.FileDBUtil;
 import com.example.mymanage.tool.MyException;
 import com.example.mymanage.tool.TimedTask;
 import lombok.NonNull;
@@ -24,7 +24,8 @@ public class RoomHttp implements IRoomDB, IWriteToDB {
     @Override@Synchronized
     public List<RoomDetails> getAllList() {
         if (roomDetailsList == null) {
-            roomDetailsList = HttpUtil.getListFromDB(RoomDetails.class, TableName);
+//            roomDetailsList = HttpUtil.getListFromDB(RoomDetails.class, TableName);
+            roomDetailsList = FileDBUtil.getListFromDB(RoomDetails.class);
         }
         return roomDetailsList;
     }
@@ -165,7 +166,7 @@ public class RoomHttp implements IRoomDB, IWriteToDB {
 
     @Override
     public boolean writeToDB() {
-        return HttpUtil.writeToDB(roomDetailsList, TableName);
+        return FileDBUtil.writeToDB(roomDetailsList);//HttpUtil.writeToDB(roomDetailsList, TableName);
     }
 
     @Override

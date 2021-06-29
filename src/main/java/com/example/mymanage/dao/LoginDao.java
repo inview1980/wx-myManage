@@ -2,6 +2,7 @@ package com.example.mymanage.dao;
 
 
 import com.example.mymanage.db.MyUserHttp;
+import com.example.mymanage.db.TokenHttp;
 import com.example.mymanage.http.*;
 import com.example.mymanage.tool.EncryptUtil;
 import com.example.mymanage.tool.MyException;
@@ -36,7 +37,7 @@ public class LoginDao {
         VerificationCodeUtil.deleteKey(verificationCode);
         boolean isOk = myUserHttp.checkUserPassword(userName, password);
         if (isOk) {
-            return TokenUtil.addToken();
+            return TokenHttp.addToken();
         } else {
             throw new MyException(HttpResultEnum.PasswordError);
         }

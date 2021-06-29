@@ -20,22 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ReadExcel {
-    private List<PersonDetails> personDetailsList;
-    private List<RentalRecord> rentalRecordList;
-    private List<RoomDetails> roomDetailsList;
     private List<PayProperty> payPropertyList;
     @Value("${resource.default-db-file}")
     private String path;
     @Autowired
     private ApplicationContext context;
 
-    public List<PersonDetails> getPersonDetailsList() {
-        if (personDetailsList == null) {
-            personDetailsList = new ArrayList<>();
-            EasyExcel.read(path, PersonDetails.class, new MyExcelListener(personDetailsList)).sheet(PersonDetails.class.getSimpleName()).doReadSync();
-        }
-        return personDetailsList;
-    }
 
     /**
      * 根据DBChangeSignEnum枚举中的值，读取相应的数据并保存到excel文件中
@@ -46,11 +36,11 @@ public class ReadExcel {
         ExcelWriter excelWriter = EasyExcel.write(os).build();
         for (DBChangeSignEnum value : DBChangeSignEnum.values()) {
             List<?> allList = ((IGetAllList<?>) context.getBean(value.getBeanClass())).getAllList();
-            if(value==DBChangeSignEnum.MyUser){//如果是MyUser表，加密密码后再保存
-                List<MyUser> tmpLst=new ArrayList<>();
+            if (value == DBChangeSignEnum.MyUser) {//如果是MyUser表，加密密码后再保存
+                List<MyUser> tmpLst = new ArrayList<>();
                 for (Object user : allList) {
-                    MyUser u= (MyUser) ((MyUser)user).clone();
-                    u.setPassword(EncryptUtil.encode(u.getPassword(),u.getKey()));
+                    MyUser u = (MyUser) ((MyUser) user).clone();
+                    u.setPassword(EncryptUtil.encode(u.getPassword(), u.getKey()));
                     tmpLst.add(u);
                 }
                 String simpleName = value.getPojoClass().getSimpleName();
@@ -64,7 +54,7 @@ public class ReadExcel {
         return new ByteArrayInputStream(os.toByteArray());
     }
 
-    public void readXlsToDB(@NonNull String path){
+    public void readXlsToDB(@NonNull String path) {
         for (DBChangeSignEnum value : DBChangeSignEnum.values()) {
             List<?> allList = ((IGetAllList<?>) context.getBean(value.getBeanClass())).getAllList();
             allList.clear();
@@ -73,38 +63,29 @@ public class ReadExcel {
         }
     }
 
-    private void getAllList(List<?> lst,DBChangeSignEnum signEnum){
-        EasyExcel.read(path, signEnum.getPojoClass(), new MyExcelListener(lst)).sheet(signEnum.getPojoClass().getSimpleName()).doReadSync();
-    }
-
-    public List<PayProperty> getPayPropertyList() {
-        if (payPropertyList == null) {
-            payPropertyList = new ArrayList<>();
-            getAllList(payPropertyList,DBChangeSignEnum.PayProperty);
-//            EasyExcel.read(path, PayProperty.class, new MyExcelListener(payPropertyList)).sheet(PayProperty.class.getSimpleName()).doReadSync();
+    public void readXls() {
+        for (DBChangeSignEnum value : DBChangeSignEnum.values()) {
+            List<?> allList = ((IGetAllList<?>) context.getBean(value.getBeanClass())).getAllList();
+            allList.clear();
+            EasyExcel.read(path, value.getPojoClass(), new MyExcelListener(allList)).sheet(value.getPojoClass().getSimpleName()).doReadSync();
         }
-        return payPropertyList;
     }
 
-    public List<RentalRecord> getRecordList() {
-        if (rentalRecordList == null) {
-            rentalRecordList = new ArrayList<>();
-            EasyExcel.read(path, RentalRecord.class, new MyExcelListener(rentalRecordList)).sheet(RentalRecord.class.getSimpleName()).doReadSync();
-        }
-        return rentalRecordList;
-    }
+//    private void getAllList(List<?> lst,DBChangeSignEnum signEnum){
+//        EasyExcel.read(path, signEnum.getPojoClass(), new MyExcelListener(lst)).sheet(signEnum.getPojoClass().getSimpleName()).doReadSync();
+//    }
+
+//    public List<PayProperty> getPayPropertyList() {
+//        if (payPropertyList == null) {
+//            payPropertyList = new ArrayList<>();
+//            getAllList(payPropertyList,DBChangeSignEnum.PayProperty);
+////            EasyExcel.read(path, PayProperty.class, new MyExcelListener(payPropertyList)).sheet(PayProperty.class.getSimpleName()).doReadSync();
+//        }
+//        return payPropertyList;
+//    }
 
 
-    public List<RoomDetails> getRoomDetailsList() {
-        if (roomDetailsList == null) {
-            roomDetailsList = new ArrayList<>();
-            EasyExcel.read(path, RoomDetails.class, new MyExcelListener(roomDetailsList)).sheet(RoomDetails.class.getSimpleName()).doReadSync();
-        }
-        return roomDetailsList;
-    }
-
-
-    static class MyExcelListener<T> extends AnalysisEventListener<T> {
+    public static class MyExcelListener<T> extends AnalysisEventListener<T> {
         private List<T> tmpLst;
 
         public MyExcelListener(List<T> tmpLst) {

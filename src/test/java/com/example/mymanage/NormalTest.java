@@ -1,5 +1,7 @@
 package com.example.mymanage;
 
+import com.alibaba.fastjson.JSON;
+import com.example.mymanage.http.MyToken;
 import com.example.mymanage.pojo.MyUser;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
@@ -37,5 +39,15 @@ public class NormalTest {
         u2.setPassword("00000");
         System.out.println(user);
         System.out.println(u2);
+    }
+
+    @Test
+    public void test2(){
+        MyToken token=new MyToken();
+        String tmp=JSON.toJSONString(token);
+        System.out.println(tmp);
+
+        MyToken k2=JSON.parseObject(tmp,MyToken.class);
+        System.out.println(k2);
     }
 }

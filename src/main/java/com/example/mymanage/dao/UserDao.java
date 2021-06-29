@@ -3,7 +3,7 @@ package com.example.mymanage.dao;
 import com.example.mymanage.db.MyUserHttp;
 import com.example.mymanage.http.HttpResultEnum;
 import com.example.mymanage.http.MyToken;
-import com.example.mymanage.http.TokenUtil;
+import com.example.mymanage.db.TokenHttp;
 import com.example.mymanage.http.VerificationCodeUtil;
 import com.example.mymanage.pojo.MyUser;
 import com.example.mymanage.tool.EncryptUtil;
@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserDao {
     private final MyUserHttp myUserHttp;
-
 
     public MyToken modifyPassword(@NonNull String userName, @NonNull String oldPassword, @NonNull String newPassword, @NonNull String verificationCode) {
         if (myUserHttp.getAllList().stream().map(MyUser::getUserName).noneMatch(userName::equals)) {
@@ -36,7 +35,7 @@ public class UserDao {
         }
         String newPwd = EncryptUtil.decode(newPassword, key);
         if (myUserHttp.modifyPassword(userName, newPwd)) {
-            return TokenUtil.addToken();
+            return TokenHttp.addToken();
         }else {
             throw new MyException(HttpResultEnum.Error);
         }

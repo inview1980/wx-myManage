@@ -2,11 +2,11 @@ package com.example.mymanage.db;
 
 import com.example.mymanage.iface.IWriteToDB;
 import com.example.mymanage.pojo.PayProperty;
-import com.example.mymanage.http.HttpUtil;
+import com.example.mymanage.tool.FileDBUtil;
 import com.example.mymanage.tool.TimedTask;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
@@ -20,7 +20,8 @@ public class PayPropertyHttp implements IWriteToDB, com.example.mymanage.iface.I
     public List<PayProperty> getAllList() {
         if (payPropertyList == null) {
             synchronized (object){
-                payPropertyList = HttpUtil.getListFromDB(PayProperty.class, TableName);
+//                payPropertyList = HttpUtil.getListFromDB(PayProperty.class, TableName);
+                payPropertyList = FileDBUtil.getListFromDB(PayProperty.class);
             }
         }
         return payPropertyList;
@@ -28,7 +29,7 @@ public class PayPropertyHttp implements IWriteToDB, com.example.mymanage.iface.I
 
     @Override
     public boolean writeToDB() {
-        return HttpUtil.writeToDB(payPropertyList, TableName);
+        return FileDBUtil.writeToDB(payPropertyList);//HttpUtil.writeToDB(payPropertyList, TableName);
     }
 
     @Override

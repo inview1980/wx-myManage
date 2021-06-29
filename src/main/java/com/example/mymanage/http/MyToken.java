@@ -11,9 +11,8 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.UUID;
 
+@Getter
 public class MyToken {
-
-    @Getter
     private String token = RandomUtil.getString();
     private Date buildTime = new Date();
 

@@ -1,19 +1,15 @@
 package com.example.mymanage.db;
 
 import com.example.mymanage.http.HttpResultEnum;
-import com.example.mymanage.http.HttpUtil;
 import com.example.mymanage.iface.IGetAllList;
 import com.example.mymanage.iface.IWriteToDB;
 import com.example.mymanage.pojo.MyUser;
-import com.example.mymanage.tool.EncryptUtil;
-import com.example.mymanage.tool.MyException;
-import com.example.mymanage.tool.RandomUtil;
-import com.example.mymanage.tool.TimedTask;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.mymanage.tool.*;
 import lombok.NonNull;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -30,7 +26,8 @@ public class MyUserHttp implements IWriteToDB, IGetAllList<MyUser> {
     public List<MyUser> getAllList() {
         if (myUserList == null) {
             try {
-                val tmpLst = HttpUtil.getListFromDB(MyUser.class, TableName);
+//                val tmpLst = HttpUtil.getListFromDB(MyUser.class, TableName);
+                val tmpLst = FileDBUtil.getListFromDB(MyUser.class);
                 for (MyUser user : tmpLst) {
                     String decode = EncryptUtil.decode(user.getPassword(), user.getKey());
                     user.setPassword(decode);
@@ -54,7 +51,7 @@ public class MyUserHttp implements IWriteToDB, IGetAllList<MyUser> {
             newUser.setKey(key);
             tmpLst.add(newUser);
         }
-        return HttpUtil.writeToDB(tmpLst, TableName);
+        return FileDBUtil.writeToDB(tmpLst);// HttpUtil.writeToDB(tmpLst, TableName);
     }
 
     @Override

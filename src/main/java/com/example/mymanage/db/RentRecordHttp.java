@@ -1,13 +1,14 @@
 package com.example.mymanage.db;
 
-import com.example.mymanage.tool.TimedTask;
 import com.example.mymanage.iface.IRentRecordDB;
 import com.example.mymanage.iface.IWriteToDB;
 import com.example.mymanage.pojo.RentalRecord;
-import com.example.mymanage.http.HttpUtil;
+import com.example.mymanage.tool.FileDBUtil;
+import com.example.mymanage.tool.TimedTask;
 import lombok.NonNull;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,7 +22,8 @@ public class RentRecordHttp implements IRentRecordDB, IWriteToDB {
     @Synchronized
     public List<RentalRecord> getAllList() {
         if (rentalRecordList == null) {
-            rentalRecordList = HttpUtil.getListFromDB(RentalRecord.class, TableName);
+//            rentalRecordList = HttpUtil.getListFromDB(RentalRecord.class, TableName);
+            rentalRecordList = FileDBUtil.getListFromDB(RentalRecord.class);
         }
         return rentalRecordList;
     }
@@ -98,7 +100,7 @@ public class RentRecordHttp implements IRentRecordDB, IWriteToDB {
 
     @Override
     public boolean writeToDB() {
-        return HttpUtil.writeToDB(rentalRecordList, TableName);
+        return FileDBUtil.writeToDB(rentalRecordList);// HttpUtil.writeToDB(rentalRecordList, TableName);
     }
 
     @Override

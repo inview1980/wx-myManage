@@ -1,6 +1,7 @@
 package com.example.mymanage.tool;
 
 import com.example.mymanage.MainApplication;
+import com.example.mymanage.db.MyUserHttp;
 import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -21,24 +22,9 @@ import static org.junit.Assert.assertTrue;
 public class ReadExcelTest extends TestCase {
     @Autowired
     ReadExcel readExcel;
+    @Autowired
+    MyUserHttp myUserHttp;
 
-    public void testGetPersonDetailsList() {
-        val test = new ReadExcel().getPersonDetailsList();
-        assertTrue(test.size() > 0);
-        log.info(test.get(5).toString());
-    }
-
-    public void testGetRecordList() {
-        val test = new ReadExcel().getRecordList();
-        assertTrue(test.size() > 0);
-        log.info(test.get(5).toString());
-    }
-
-    public void testGetRoomDetailsList() {
-        val test = new ReadExcel().getRoomDetailsList();
-        assertTrue(test.size() > 0);
-        log.info(test.get(5).toString());
-    }
 
     /**
      * 将远程数据库下载到本地xls文件中
@@ -46,7 +32,7 @@ public class ReadExcelTest extends TestCase {
     @Test
     public void saveDB2File() throws IOException, CloneNotSupportedException {
         InputStream is = readExcel.saveDB2File();
-        File file = new File("f:\\db1.xlsx");
+        File file = new File("f:\\db.xlsx");
         java.nio.file.Files.copy(
                 is,
                 file.toPath(),
@@ -58,14 +44,15 @@ public class ReadExcelTest extends TestCase {
      */
     @Test
     public void readXlsToDB() throws IOException {
-        String path="f:\\db1.xlsx";
+        String path = "f:\\db.xlsx";
         readExcel.readXlsToDB(path);
     }
 
     @Test
-    public void getPayPropertyList() {
-        val lst = readExcel.getPayPropertyList();
-        assertTrue(lst != null && lst.size() > 0);
-        log.info(lst.get(4).toString());
+    public void readXls() throws IOException {
+        readExcel.readXls();
+        val lst = myUserHttp.getAllList();
     }
+
+
 }

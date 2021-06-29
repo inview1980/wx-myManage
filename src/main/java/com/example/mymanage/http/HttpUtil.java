@@ -32,84 +32,82 @@ import java.util.List;
 
 @Slf4j
 public class HttpUtil {
-    private static final String DBQueryUrl = "https://api.weixin.qq.com/tcb/databasequery?access_token=";
-    private static final String DBDeleteTableUrl = "https://api.weixin.qq.com/tcb/databasecollectiondelete" +
-            "?access_token=";
-    private static final String DBAddTableUrl = "https://api.weixin.qq.com/tcb/databasecollectionadd?access_token=";
-    private static final String DBAddUrl = "https://api.weixin.qq.com/tcb/databaseadd?access_token=";
-    private static final String UPLoadFile = "https://api.weixin.qq.com/tcb/uploadfile?access_token=";
     private static String AccessToken = null;
     private static final Object object = new Object();
 
     public static String getAccessToken() {
         if (AccessToken == null) {
-            TimedTask.isInit=false;
+            TimedTask.isInit = false;
             getAccessTokenFromHttp();
         }
         return AccessToken;
     }
 
-    public static String getOpenID(@NonNull String code) throws IOException {
-        StringBuilder sb = new StringBuilder(StateData.getOpenID());
-        sb.append(StateData.getWXAppId());//自己的appid
-        sb.append("&secret=");
-        sb.append(StateData.getWXAppSecret());//自己的appSecret
-        sb.append("&js_code=");
-        sb.append(code);
-        sb.append("&grant_type=authorization_code");
-        sb.append("&connect_redirect=1");
-        return get(sb.toString()).getString("openid");
-    }
+//    public static void setAccessToken(){
+//        AccessToken=null;
+//    }
+//
+////    public static String getOpenID(@NonNull String code) throws IOException {
+////        StringBuilder sb = new StringBuilder(StateData.getOpenID());
+////        sb.append(StateData.getWXAppId());//自己的appid
+////        sb.append("&secret=");
+////        sb.append(StateData.getWXAppSecret());//自己的appSecret
+////        sb.append("&js_code=");
+////        sb.append(code);
+////        sb.append("&grant_type=authorization_code");
+////        sb.append("&connect_redirect=1");
+////        return get(sb.toString()).getString("openid");
+////    }
 
-    public static JSONObject get(String url)  {
+    public static JSONObject get(String url) {
         return new HttpUtil().http(new HttpGet(url));
     }
 
-    public static JSONObject post(HttpRequestBase request) throws IOException {
+    public static JSONObject post(HttpRequestBase request) {
         return new HttpUtil().http(request);
     }
 
-    /**
-     * 将集合全部写入云数据库
-     *
-     * @param tList
-     * @param tableName 云数据库中指定的表名
-     * @param <T>
-     * @return
-     */
-    public static <T> boolean writeToDB(@NonNull List<T> tList,@NonNull String tableName) {
-        synchronized (object) {
-            controlDB(StateData.getDBDeleteTableUrl(), "collection_name", tableName);
-            if (!controlDB(StateData.getDBAddTableUrl(), "collection_name", tableName))
-                return false;
-
-            HttpPost post = new HttpPost(StateData.getDBAddDBUrl() + HttpUtil.getAccessToken());
-            JSONObject json = new JSONObject();
-            json.put("env",StateData.getWXEnvId());
-            StringBuilder query = new StringBuilder("db.collection(\\\"").append(tableName).append("\\\").add({data: ");
-            query.append(JSONArray.toJSONString(tList));
-            query.append("})");
-            try {
-                json.put("query", new String(query.toString().getBytes(), "UTF-8"));
-                post.setEntity(new StringEntity(json.toString(), "UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                log.error("HttpUtil转换参数出错!");
-            }
-            try {
-                JSONObject req = HttpUtil.post(post);
-                boolean errcode = req.getInteger("errcode") == 0;
-                if (errcode) {
-                    log.info("写数据库:" + tableName + "成功");
-                } else {
-                    log.error("写数据库失败,code:" + req.getInteger("errcode") + ",MSG:" + req.getString("errmsg"));
-                }
-                return errcode;
-            } catch (IOException e) {
-                log.error("HttpUtil获取数据出错！");
-            }
-        }
-        return false;
-    }
+//    /**
+//     * 将集合全部写入云数据库
+//     *
+//     * @param tList
+//     * @param tableName 云数据库中指定的表名
+//     * @param <T>
+//     * @return
+//     */
+//    public static <T> boolean writeToDB(@NonNull List<T> tList,@NonNull String tableName) {
+//        synchronized (object) {
+//            controlDB(StateData.getDBDeleteTableUrl(), "collection_name", tableName);
+//            if (!controlDB(StateData.getDBAddTableUrl(), "collection_name", tableName))
+//                return false;
+//
+//            HttpPost post = new HttpPost(StateData.getDBAddDBUrl() + HttpUtil.getAccessToken());
+//            JSONObject json = new JSONObject();
+//            json.put("env",StateData.getWXEnvId());
+//            StringBuilder query = new StringBuilder("db.collection(\\\"").append(tableName).append("\\\").add({data: ");
+//            query.append(JSONArray.toJSONString(tList));
+//            query.append("})");
+//            try {
+//                json.put("query", new String(query.toString().getBytes(), "UTF-8"));
+//                post.setEntity(new StringEntity(json.toString(), "UTF-8"));
+//            } catch (UnsupportedEncodingException e) {
+//                log.error("HttpUtil转换参数出错!");
+//            }
+//            try {
+//                JSONObject req = HttpUtil.post(post);
+//                boolean errcode = req.getInteger("errcode") == 0;
+//                if (errcode) {
+//                    log.info("写数据库:" + tableName + "成功");
+//                } else {
+//                    log.error("写数据库失败,code:" + req.getInteger("errcode") + ",MSG:" + req.getString("errmsg"));
+//                }
+//                return errcode;
+//            } catch (IOException e) {
+//                log.error("HttpUtil获取数据出错！");
+//            }
+//        }
+//        return false;
+//    }
 
     /**
      * 上传文件到服务器，返回file_id
@@ -173,33 +171,33 @@ public class HttpUtil {
         return buffer;
     }
 
-    /**
-     * 删除、新建表格
-     *
-     * @param url
-     * @param key         删除和新建均为collection_name
-     * @param queryString 需执行的SQL语句
-     * @return
-     */
-    private static boolean controlDB(String url, String key, String queryString) {
-        HttpPost post = new HttpPost(url + getAccessToken());
-        JSONObject json = new JSONObject();
-        json.put("env", StateData.getWXEnvId());
-        json.put(key, queryString);
-        try {
-            post.setEntity(new StringEntity(json.toString()));
-        } catch (UnsupportedEncodingException e) {
-            log.error(e.getLocalizedMessage());
-            throw new MyException(HttpResultEnum.ParameterChangeError);
-        }
-        try {
-            JSONObject req = HttpUtil.post(post);
-            return req.getInteger("errcode") == 0;
-        } catch (IOException e) {
-            log.error("重写数据库出错");
-            throw new MyException(HttpResultEnum.POSTError);
-        }
-    }
+//    /**
+//     * 删除、新建表格
+//     *
+//     * @param url
+//     * @param key         删除和新建均为collection_name
+//     * @param queryString 需执行的SQL语句
+//     * @return
+//     */
+//    private static boolean controlDB(String url, String key, String queryString) {
+//        HttpPost post = new HttpPost(url + getAccessToken());
+//        JSONObject json = new JSONObject();
+//        json.put("env", StateData.getWXEnvId());
+//        json.put(key, queryString);
+//        try {
+//            post.setEntity(new StringEntity(json.toString()));
+//        } catch (UnsupportedEncodingException e) {
+//            log.error(e.getLocalizedMessage());
+//            throw new MyException(HttpResultEnum.ParameterChangeError);
+//        }
+//        try {
+//            JSONObject req = HttpUtil.post(post);
+//            return req.getInteger("errcode") == 0;
+//        } catch (IOException e) {
+//            log.error("重写数据库出错");
+//            throw new MyException(HttpResultEnum.POSTError);
+//        }
+//    }
 
 
     private JSONObject http(HttpRequestBase request) {
@@ -218,9 +216,13 @@ public class HttpUtil {
                 if (responseEntity != null) {
                     res = JSON.parseObject(EntityUtils.toString(responseEntity));
                     //如果AccessToken过期，重新申请
-                    if (res.containsKey("errcode") && res.getInteger("errcode") == 42001) {
-                        getAccessTokenFromHttp();
-                        http(request);
+                    if (res.containsKey("errcode")) {
+                        int code = res.getInteger("errcode");
+                        log.error("http错误码{}",code);
+                        if (code == 42001 || code == 40014) {
+                            getAccessTokenFromHttp();
+                            http(request);
+                        }
                     }
                 }
             }
@@ -238,77 +240,77 @@ public class HttpUtil {
         String url = StateData.getAccessToken();
         url += StateData.getWXAppId();
         url += "&secret=";
-        url +=StateData.getWXAppSecret() ;
+        url += StateData.getWXAppSecret();
         JSONObject jsonObject = get(url);
         if (jsonObject.containsKey("access_token")) {
             AccessToken = jsonObject.getString("access_token");
             log.info("读取数据库AccessToken");
-        }else {
+        } else {
             throw new MyException(HttpResultEnum.GetAccessTokenError);
         }
     }
 
-    public static <T> List<T> getListFromDB(Class<T> tClass, String tableName) {
-        List<T> result = new ArrayList<>();
-        synchronized (object) {
-            getListFromDB(tClass, tableName, result, 0);
-            return result;
-        }
-    }
-
-    /**
-     * 执行从数据库获取数据的操作
-     *
-     * @param tClass    需转换成的类
-     * @param tableName
-     * @param <T>
-     * @return
-     */
-    public static <T> void getListFromDB(@NonNull Class<T> tClass,@NonNull String tableName,@NonNull List<T> result,
-                                         int OffsetRide) {
-        int limitNum = 1000;
-        StringBuilder sb = new StringBuilder(StateData.getDBQueryUrl() );
-        sb.append(HttpUtil.getAccessToken());
-        HttpPost post = new HttpPost(sb.toString());
-        JSONObject json = new JSONObject();
-        json.put("env", StateData.getWXEnvId());
-        String queryString = String.format("db.collection(\\\"%s\\\").limit(%d).skip(%d).get()", tableName, limitNum,
-                OffsetRide * limitNum);
-        json.put("query", queryString);
-        try {
-            post.setEntity(new StringEntity(json.toString()));
-        } catch (UnsupportedEncodingException e) {
-            log.error(tClass.getSimpleName() + "转换参数出错!");
-            throw new MyException(HttpResultEnum.ParameterChangeError);
-        }
-        try {
-            JSONObject req = HttpUtil.post(post);
-            if (req.getInteger("errcode") != 0) {
-                log.error(req.getString("errmsg"));
-            }
-            String data = req.getString("data");
-            if (null == data) {
-                log.error("数据库{}不存在！",tableName);
-                data = "";
-            }
-            //将读取的数据转换成对象列表
-            data = data.replace("[\"{", "[{").replace("}\"]", "}]");
-            data = data.replace("\\", "").replace("}\",\"{", "},{");
-            List<T> collection = JSON.parseArray(data, tClass);
-            if(collection==null){
-                return;
-            }
-            log.info("读表" + tableName + "数据从" + OffsetRide * limitNum + "到" + (OffsetRide * limitNum + collection.size() +
-                    "项"));
-            result.addAll(collection);
-            //判断是否读完毕
-            JSONObject pager = req.getJSONObject("pager");
-            if (pager.getInteger("Total") <= pager.getInteger("Offset") * pager.getInteger("Limit"))
-                getListFromDB(tClass, tableName, result, ++OffsetRide);
-
-        } catch (IOException e) {
-            log.error(tClass.getSimpleName() + "获取数据出错！");
-        }
-    }
+//    public static <T> List<T> getListFromDB(Class<T> tClass, String tableName) {
+//        List<T> result = new ArrayList<>();
+//        synchronized (object) {
+//            getListFromDB(tClass, tableName, result, 0);
+//            return result;
+//        }
+//    }
+//
+//    /**
+//     * 执行从数据库获取数据的操作
+//     *
+//     * @param tClass    需转换成的类
+//     * @param tableName
+//     * @param <T>
+//     * @return
+//     */
+//    public static <T> void getListFromDB(@NonNull Class<T> tClass,@NonNull String tableName,@NonNull List<T> result,
+//                                         int OffsetRide) {
+//        int limitNum = 1000;
+//        StringBuilder sb = new StringBuilder(StateData.getDBQueryUrl() );
+//        sb.append(HttpUtil.getAccessToken());
+//        HttpPost post = new HttpPost(sb.toString());
+//        JSONObject json = new JSONObject();
+//        json.put("env", StateData.getWXEnvId());
+//        String queryString = String.format("db.collection(\\\"%s\\\").limit(%d).skip(%d).get()", tableName, limitNum,
+//                OffsetRide * limitNum);
+//        json.put("query", queryString);
+//        try {
+//            post.setEntity(new StringEntity(json.toString()));
+//        } catch (UnsupportedEncodingException e) {
+//            log.error(tClass.getSimpleName() + "转换参数出错!");
+//            throw new MyException(HttpResultEnum.ParameterChangeError);
+//        }
+//        try {
+//            JSONObject req = HttpUtil.post(post);
+//            if (req.getInteger("errcode") != 0) {
+//                log.error(req.getString("errmsg"));
+//            }
+//            String data = req.getString("data");
+//            if (null == data) {
+//                log.error("数据库{}不存在！",tableName);
+//                data = "";
+//            }
+//            //将读取的数据转换成对象列表
+//            data = data.replace("[\"{", "[{").replace("}\"]", "}]");
+//            data = data.replace("\\", "").replace("}\",\"{", "},{");
+//            List<T> collection = JSON.parseArray(data, tClass);
+//            if(collection==null){
+//                return;
+//            }
+//            log.info("读表" + tableName + "数据从" + OffsetRide * limitNum + "到" + (OffsetRide * limitNum + collection.size() +
+//                    "项"));
+//            result.addAll(collection);
+//            //判断是否读完毕
+//            JSONObject pager = req.getJSONObject("pager");
+//            if (pager.getInteger("Total") <= pager.getInteger("Offset") * pager.getInteger("Limit"))
+//                getListFromDB(tClass, tableName, result, ++OffsetRide);
+//
+//        } catch (IOException e) {
+//            log.error(tClass.getSimpleName() + "获取数据出错！");
+//        }
+//    }
 
 }

@@ -1,10 +1,9 @@
 package com.example.mymanage.tool;
 
 import com.example.mymanage.db.DBChangeSignEnum;
-import com.example.mymanage.http.HttpUtil;
-import com.example.mymanage.http.TokenUtil;
+import com.example.mymanage.db.TokenHttp;
 import com.example.mymanage.http.VerificationCodeUtil;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -21,8 +20,9 @@ import java.util.Map;
 @EnableScheduling   // 2.开启定时任务
 @EnableAsync
 public class TimedTask {
-    private static int SaveDBNow = 0;//秒，倒计时
+        private static int SaveDBNow = 0;//秒，倒计时
     public static boolean isInit = true;
+
     private static final Map<Integer, DBChangeSignEnum> signMap = new HashMap<Integer, DBChangeSignEnum>() {{
         for (DBChangeSignEnum value : DBChangeSignEnum.values()) {
             put(value.ordinal(), value);
@@ -59,17 +59,17 @@ public class TimedTask {
     //间隔1小时，检查发送给用户的Token是否过期
     @Scheduled(fixedRate = 1000 * 60*60)
     void checkTokenOverdue() {
-        TokenUtil.checkTokenOverdue();
+        TokenHttp.checkTokenOverdue();
     }
 
     //到规定间隔时间，更新AccessToken,因为远程服务器默认有效期为7200秒
-    @Scheduled(fixedRate = 1000 * 7000)
-    @Async
-    void checkAccessTokenOverdue() {
-        if (!isInit) {
-            HttpUtil.getAccessTokenFromHttp();
-        }
-    }
+//    @Scheduled(fixedRate = 1000 * 7000)
+//    @Async
+//    void checkAccessTokenOverdue() {
+//        if (!isInit) {
+//            HttpUtil.getAccessTokenFromHttp();
+//        }
+//    }
 
     /**
      * 每秒检查验证码是否过期
