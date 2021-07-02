@@ -2,11 +2,11 @@ package com.example.mymanage.pojo;
 
 import com.alibaba.excel.annotation.ExcelProperty;
 
-import java.util.Calendar;
 import java.util.Date;
 
 import com.alibaba.excel.annotation.format.DateTimeFormat;
 import com.alibaba.fastjson.annotation.JSONField;
+import com.example.mymanage.tool.StaticConfigData;
 import lombok.*;
 
 /**
@@ -16,13 +16,12 @@ import lombok.*;
 @EqualsAndHashCode
 @Data
 public final class RentalRecord {
-    private static final String dateFormat = "yyyy-M-d";
     @ExcelProperty(value = "primary_id")
     private int _id;
 
     @ExcelProperty(value = "房租开始时间")
-    @DateTimeFormat(dateFormat)
-    @JSONField(format = dateFormat)
+    @DateTimeFormat(StaticConfigData.DateFormatString)
+    @JSONField(format = StaticConfigData.DateFormatString)
     private Date startDate;
 
     @ExcelProperty(value = "房租时长（月）")
@@ -30,8 +29,8 @@ public final class RentalRecord {
 
 
     @ExcelProperty(value = "付款日期")
-    @DateTimeFormat(dateFormat)
-    @JSONField(format = dateFormat)
+    @DateTimeFormat(StaticConfigData.DateFormatString)
+    @JSONField(format = StaticConfigData.DateFormatString)
     private Date paymentDate;
 
     @ExcelProperty(value = "付款金额")
@@ -44,7 +43,7 @@ public final class RentalRecord {
      * 是否包含物业费
      */
     @ExcelProperty(value = "房租包含物业费")
-    private boolean isContainRealty;
+    private boolean containRealty;
 
     @ExcelProperty(value = "房间号")
     private String roomNumber;
@@ -53,8 +52,8 @@ public final class RentalRecord {
      * 物业费开始时间
      */
     @ExcelProperty(value = "物业费开始时间")
-    @DateTimeFormat(dateFormat)
-    @JSONField(format = dateFormat)
+    @DateTimeFormat(StaticConfigData.DateFormatString)
+    @JSONField(format = StaticConfigData.DateFormatString)
     private Date realtyStartDate;
 
     /**
@@ -82,8 +81,8 @@ public final class RentalRecord {
      * 签合同时间
      */
     @ExcelProperty(value = "签合同时间")
-    @DateTimeFormat(dateFormat)
-    @JSONField(format = dateFormat)
+    @DateTimeFormat(StaticConfigData.DateFormatString)
+    @JSONField(format = StaticConfigData.DateFormatString)
     private Date contractSigningDate;
 
     /**

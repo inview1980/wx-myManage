@@ -48,14 +48,14 @@ public class RentController {
      * 获取指定小区的房源的基本信息，包括房号、现租户、到期日、面积、租金
      */
     @PostMapping("/roomByCommunity")
-    List<HashMap<String, String>> getRoomByCommunityLst(@RequestBody JSONObject jsonParam) {
+    Result getRoomByCommunityLst(@RequestBody JSONObject jsonParam) {
         String communityName = jsonParam.get("community").toString();
-        return roomDao.getRoomByCommunityMap(communityName);
+        return Result.Ok(roomDao.getRoomByCommunityMap(communityName));
     }
 
     @PostMapping("/getCommunityList")
-    List<String> getCommunityList() {
-        return roomDao.getCommunitys();
+    Result getCommunityList() {
+        return Result.Ok(roomDao.getCommunitys());
     }
 
 

@@ -3,6 +3,7 @@ package com.example.mymanage.pojo;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.alibaba.excel.annotation.format.DateTimeFormat;
 import com.alibaba.fastjson.annotation.JSONField;
+import com.example.mymanage.tool.StaticConfigData;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -12,8 +13,6 @@ import java.util.Date;
 @Data@ToString
 @EqualsAndHashCode
 public class PayProperty {
-    private static final String dateFormat = "yyyy-M-d";
-
     @ExcelProperty(value = "金额")
     private double money;
 
@@ -21,11 +20,11 @@ public class PayProperty {
     private String roomID;
 
     @ExcelProperty(value = "付款日期")
-    @DateTimeFormat(dateFormat)@JSONField(format = dateFormat)
+    @DateTimeFormat(StaticConfigData.DateFormatString)@JSONField(format = StaticConfigData.DateFormatString)
     private Date payDate;
 
     @ExcelProperty(value = "开始时间")
-    @DateTimeFormat(dateFormat)@JSONField(format = dateFormat)
+    @DateTimeFormat(StaticConfigData.DateFormatString)@JSONField(format = StaticConfigData.DateFormatString)
     private Date startDate;
 
     @ExcelProperty(value = "期限（月）")

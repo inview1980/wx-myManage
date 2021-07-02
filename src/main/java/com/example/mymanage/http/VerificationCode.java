@@ -1,12 +1,10 @@
 package com.example.mymanage.http;
 
 import com.example.mymanage.tool.RandomUtil;
-import com.example.mymanage.tool.StateData;
-import lombok.Data;
+import com.example.mymanage.tool.StaticConfigData;
 import lombok.Getter;
 
 import java.util.Date;
-import java.util.Random;
 
 
 public class VerificationCode {
@@ -22,6 +20,6 @@ public class VerificationCode {
 
     public boolean isOverdue() {
         long time = new Date().getTime() - buildDate.getTime();
-        return StateData.getVerificationCodeEffectiveTime() <= time;
+        return StaticConfigData.VerificationCodeEffectiveTime <= time;
     }
 }

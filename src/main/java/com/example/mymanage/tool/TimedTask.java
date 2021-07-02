@@ -3,7 +3,6 @@ package com.example.mymanage.tool;
 import com.example.mymanage.db.DBChangeSignEnum;
 import com.example.mymanage.db.TokenHttp;
 import com.example.mymanage.http.VerificationCodeUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -44,7 +43,7 @@ public class TimedTask {
     @Async
     void checkDBModify() {
         //每秒减1，小于0则需要将数据重写入远程数据库,默认300秒后
-        if (SaveDBNow >= StateData.getIntervalNumForSaveDB()) {
+        if (SaveDBNow >= StaticConfigData.IntervalNumForSaveDB) {
             synchronized (object) {
                 for (DBChangeSignEnum entry : signMap.values()) {
                     entry.checkChanged();

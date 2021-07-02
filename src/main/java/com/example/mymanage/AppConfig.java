@@ -9,7 +9,7 @@ import com.example.mymanage.iface.IPayPropertyDB;
 import com.example.mymanage.iface.IPersonDB;
 import com.example.mymanage.iface.IRentRecordDB;
 import com.example.mymanage.iface.IRoomDB;
-import com.example.mymanage.tool.StateData;
+import com.example.mymanage.tool.StaticConfigData;
 import com.example.mymanage.tool.ReadExcel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -18,11 +18,8 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistration
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import javax.annotation.PostConstruct;
-
 @Configuration
 public class AppConfig implements WebMvcConfigurer {
-    @Autowired private StateData appInit;//默认初始化类
 
     @Bean
     public IRentRecordDB iRentRecordDB() {

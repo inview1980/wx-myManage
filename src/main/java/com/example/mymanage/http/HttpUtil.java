@@ -1,10 +1,9 @@
 package com.example.mymanage.http;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.example.mymanage.tool.MyException;
-import com.example.mymanage.tool.StateData;
+import com.example.mymanage.tool.StaticConfigData;
 import com.example.mymanage.tool.TimedTask;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -26,9 +25,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 @Slf4j
 public class HttpUtil {
@@ -112,13 +109,13 @@ public class HttpUtil {
     /**
      * 上传文件到服务器，返回file_id
      */
-    public static String upLoadFile(@NonNull InputStream inputStream) throws IOException {
-        SimpleDateFormat format = new SimpleDateFormat(StateData.getUpLoadFileNameFormat());
+    public static String upLoadFile(@NonNull InputStream inputStream)  {
+        SimpleDateFormat format = new SimpleDateFormat(StaticConfigData.UpLoadFileNameFormatString);
         String tmpFilePath = "tmp/" + format.format(new Date()) + ".xls";
         synchronized (object) {
-            HttpPost post = new HttpPost(StateData.getUPLoadFileUrl() + getAccessToken());
+            HttpPost post = new HttpPost(StaticConfigData.UPLoadFileUrl + getAccessToken());
             JSONObject json = new JSONObject();
-            json.put("env", StateData.getWXEnvId());
+            json.put("env", StaticConfigData.EnvID);
             json.put("path", tmpFilePath);
             post.setEntity(new StringEntity(json.toString(), "UTF-8"));
             JSONObject req = HttpUtil.post(post);
@@ -151,6 +148,7 @@ public class HttpUtil {
             throw new MyException(HttpResultEnum.UploadFileError);
         }
     }
+
 
     private static byte[] file2Bytes(InputStream inputStream) {
         byte[] buffer = null;
@@ -237,10 +235,10 @@ public class HttpUtil {
      * 获取数据库的操作accessToken
      */
     public static void getAccessTokenFromHttp() {
-        String url = StateData.getAccessToken();
-        url += StateData.getWXAppId();
+        String url = StaticConfigData.AccessTokenURL;
+        url += StaticConfigData.AppID;
         url += "&secret=";
-        url += StateData.getWXAppSecret();
+        url += StaticConfigData.AppSecret;
         JSONObject jsonObject = get(url);
         if (jsonObject.containsKey("access_token")) {
             AccessToken = jsonObject.getString("access_token");

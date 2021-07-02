@@ -5,10 +5,13 @@ import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
 import com.example.mymanage.db.DBChangeSignEnum;
+import com.example.mymanage.http.HttpResultEnum;
 import com.example.mymanage.iface.IGetAllList;
 import com.example.mymanage.iface.IWriteToDB;
-import com.example.mymanage.pojo.*;
+import com.example.mymanage.pojo.MyUser;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
@@ -19,8 +22,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 public class ReadExcel {
-    private List<PayProperty> payPropertyList;
     @Value("${resource.default-db-file}")
     private String path;
     @Autowired
@@ -29,20 +32,52 @@ public class ReadExcel {
 
     /**
      * 根据DBChangeSignEnum枚举中的值，读取相应的数据并保存到excel文件中
+     *
+     * @return
      */
-    public InputStream saveDB2File() throws CloneNotSupportedException {
+    public byte[] saveDB2File() {
+        val excel = new ExcelExportUtil();
+        try {
+            for (DBChangeSignEnum value : DBChangeSignEnum.values()) {
+                List<?> allList = ((IGetAllList<?>) context.getBean(value.getBeanClass())).getAllList();
+                log.info("读取表{}数据，共{}项。", value.getPojoClass().getSimpleName(), allList.size());
+                if (value == DBChangeSignEnum.MyUser) {//如果是MyUser表，加密密码后再保存
+                    excel.add(encodeUserList(allList));
+                    continue;
+                }
+                excel.add(allList);
+            }
+        } catch (CloneNotSupportedException e) {
+            log.error(e.getLocalizedMessage());
+            throw new MyException(HttpResultEnum.UploadFileError);
+        }
+        return excel.build().write();
+    }
+
+    /**
+     * 将用户信息列表中，密码进行加密
+     */
+    private List<MyUser> encodeUserList(List<?> allList) throws CloneNotSupportedException {
+        List<MyUser> tmpLst = new ArrayList<>();
+        for (Object user : allList) {
+            MyUser u = (MyUser) ((MyUser) user).clone();
+            u.setPassword(EncryptUtil.encode(u.getPassword(), u.getKey()));
+            tmpLst.add(u);
+        }
+        return tmpLst;
+    }
+
+    /**
+     * 根据DBChangeSignEnum枚举中的值，读取相应的数据并保存到excel文件中
+     */
+    public InputStream saveDB2FileByEasyExcel() throws CloneNotSupportedException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
         ExcelWriter excelWriter = EasyExcel.write(os).build();
         for (DBChangeSignEnum value : DBChangeSignEnum.values()) {
             List<?> allList = ((IGetAllList<?>) context.getBean(value.getBeanClass())).getAllList();
             if (value == DBChangeSignEnum.MyUser) {//如果是MyUser表，加密密码后再保存
-                List<MyUser> tmpLst = new ArrayList<>();
-                for (Object user : allList) {
-                    MyUser u = (MyUser) ((MyUser) user).clone();
-                    u.setPassword(EncryptUtil.encode(u.getPassword(), u.getKey()));
-                    tmpLst.add(u);
-                }
+                List<MyUser> tmpLst = encodeUserList(allList);
                 String simpleName = value.getPojoClass().getSimpleName();
                 excelWriter.write(tmpLst, EasyExcel.writerSheet(simpleName).head(value.getPojoClass()).build());
                 continue;
@@ -54,14 +89,23 @@ public class ReadExcel {
         return new ByteArrayInputStream(os.toByteArray());
     }
 
+
     public void readXlsToDB(@NonNull String path) {
         for (DBChangeSignEnum value : DBChangeSignEnum.values()) {
             List<?> allList = ((IGetAllList<?>) context.getBean(value.getBeanClass())).getAllList();
             allList.clear();
-            EasyExcel.read(path, value.getPojoClass(), new MyExcelListener(allList)).sheet(value.getPojoClass().getSimpleName()).doReadSync();
+            EasyExcel.read(path, value.getPojoClass(), new MyExcelListener(allList))
+                    .sheet(value.getPojoClass().getSimpleName()).doReadSync();
+            if (value == DBChangeSignEnum.MyUser) {
+                for (Object user : allList) {
+                    MyUser user1 = (MyUser) user;
+                    user1.setPassword(EncryptUtil.decode(user1.getPassword(), user1.getKey()));
+                }
+            }
             ((IWriteToDB) context.getBean(value.getBeanClass())).writeToDB();
         }
     }
+
 
     public void readXls() {
         for (DBChangeSignEnum value : DBChangeSignEnum.values()) {
@@ -70,20 +114,6 @@ public class ReadExcel {
             EasyExcel.read(path, value.getPojoClass(), new MyExcelListener(allList)).sheet(value.getPojoClass().getSimpleName()).doReadSync();
         }
     }
-
-//    private void getAllList(List<?> lst,DBChangeSignEnum signEnum){
-//        EasyExcel.read(path, signEnum.getPojoClass(), new MyExcelListener(lst)).sheet(signEnum.getPojoClass().getSimpleName()).doReadSync();
-//    }
-
-//    public List<PayProperty> getPayPropertyList() {
-//        if (payPropertyList == null) {
-//            payPropertyList = new ArrayList<>();
-//            getAllList(payPropertyList,DBChangeSignEnum.PayProperty);
-////            EasyExcel.read(path, PayProperty.class, new MyExcelListener(payPropertyList)).sheet(PayProperty.class.getSimpleName()).doReadSync();
-//        }
-//        return payPropertyList;
-//    }
-
 
     public static class MyExcelListener<T> extends AnalysisEventListener<T> {
         private List<T> tmpLst;

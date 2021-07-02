@@ -34,11 +34,15 @@ public enum HttpResultEnum {
     UserNotExist(10057,"该用户不存在"),
 
     /**
+     * 上传文件失败，上传文件不存在
+     */
+    UploadFileErrorFileNotExists(10058, "上传文件失败，上传文件不存在"),
+    /**
      * 解密密码信息时发生错误
      */
     DecryptError(11000,"解密密码信息时发生错误"),
-
     Error(10098, "未知错误"),
+    IOError(10099, "IO错误"),
     /**
      * 验证码过期
      */

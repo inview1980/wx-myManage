@@ -10,7 +10,7 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 public final class PersonDetails {
-    @ExcelProperty(index = 4)
+//    @ExcelProperty(index = 4)
     private int _id;
     @ExcelProperty(value = "姓名")
     private String name;

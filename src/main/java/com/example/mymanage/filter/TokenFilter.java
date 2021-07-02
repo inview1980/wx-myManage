@@ -23,6 +23,7 @@ public class TokenFilter implements HandlerInterceptor {
      */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException {
+//        return true;
         String userToken = request.getHeader("userToken");// 获取token
         if (userToken != null && TokenHttp.checkToken(userToken).isPresent()) {
             return true;//如果设置为false时，被请求时，拦截器执行到此处将不会继续操作
