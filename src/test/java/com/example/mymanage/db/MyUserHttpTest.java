@@ -24,7 +24,7 @@ public class MyUserHttpTest extends TestCase {
         List<MyUser> userList = userHttp.getAllList();
         userList.clear();
         userList.add(new MyUser(1, "inview", "123456", ""));
-//        userList.add(new MyUser(2, "test", "123456", ""));
+//        userList.add(new MyUser.dbTxt(2, "test", "123456", ""));
         assertTrue(userHttp.writeToDB());
     }
 

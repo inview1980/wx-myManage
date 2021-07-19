@@ -1,29 +1,32 @@
 package com.example.mymanage.db;
 
+import com.example.mymanage.AppConfig;
+import com.example.mymanage.iface.IReadAndWriteDB;
 import com.example.mymanage.iface.IRentRecordDB;
 import com.example.mymanage.iface.IWriteToDB;
 import com.example.mymanage.pojo.RentalRecord;
 import com.example.mymanage.tool.FileDBUtil;
 import com.example.mymanage.tool.TimedTask;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Slf4j
+@Slf4j@Component
 public class RentRecordHttp implements IRentRecordDB, IWriteToDB {
     private static List<RentalRecord> rentalRecordList;
-    private final String TableName = "rent-Records";
 
     @Override
     @Synchronized
     public List<RentalRecord> getAllList() {
         if (rentalRecordList == null) {
-//            rentalRecordList = HttpUtil.getListFromDB(RentalRecord.class, TableName);
-            rentalRecordList = FileDBUtil.getListFromDB(RentalRecord.class);
+            rentalRecordList = AppConfig.getiReadAndWriteDB().getListFromDB(RentalRecord.class);
         }
         return rentalRecordList;
     }
@@ -57,7 +60,7 @@ public class RentRecordHttp implements IRentRecordDB, IWriteToDB {
                 if (record.get_id() == recordId) {
                     record.setMonthlyRent(money);
                     TimedTask.SetTableChanged(DBChangeSignEnum.RentRecordSign);
-                    log.info("更新房租,房间为：" + record.getRoomNumber());
+                    log.info("调整租金,房间为：" + record.getRoomNumber());
                     return true;
                 }
             }
@@ -73,7 +76,7 @@ public class RentRecordHttp implements IRentRecordDB, IWriteToDB {
                 if (record.get_id() == recordId) {
                     record.setDeposit(money);
                     TimedTask.SetTableChanged(DBChangeSignEnum.RentRecordSign);
-                    log.info("更新押金,房间为：" + record.getRoomNumber());
+                    log.info("调整押金,房间为：" + record.getRoomNumber());
                     return true;
                 }
             }
@@ -100,7 +103,7 @@ public class RentRecordHttp implements IRentRecordDB, IWriteToDB {
 
     @Override
     public boolean writeToDB() {
-        return FileDBUtil.writeToDB(rentalRecordList);// HttpUtil.writeToDB(rentalRecordList, TableName);
+        return AppConfig.getiReadAndWriteDB().writeToDB(rentalRecordList);// HttpUtil.writeToDB(rentalRecordList, TableName);
     }
 
     @Override

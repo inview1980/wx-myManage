@@ -1,27 +1,25 @@
 package com.example.mymanage.db;
 
+import com.example.mymanage.AppConfig;
 import com.example.mymanage.iface.IWriteToDB;
 import com.example.mymanage.pojo.PayProperty;
-import com.example.mymanage.tool.FileDBUtil;
 import com.example.mymanage.tool.TimedTask;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@Slf4j
+@Slf4j@Component
 public class PayPropertyHttp implements IWriteToDB, com.example.mymanage.iface.IPayPropertyDB {
     private static List<PayProperty> payPropertyList;
-    private final String TableName = "Pay-Property";
     private final static Object object=new Object();
 
     @Override@Synchronized
     public List<PayProperty> getAllList() {
         if (payPropertyList == null) {
             synchronized (object){
-//                payPropertyList = HttpUtil.getListFromDB(PayProperty.class, TableName);
-                payPropertyList = FileDBUtil.getListFromDB(PayProperty.class);
+                payPropertyList = AppConfig.getiReadAndWriteDB().getListFromDB(PayProperty.class);
             }
         }
         return payPropertyList;
@@ -29,7 +27,7 @@ public class PayPropertyHttp implements IWriteToDB, com.example.mymanage.iface.I
 
     @Override
     public boolean writeToDB() {
-        return FileDBUtil.writeToDB(payPropertyList);//HttpUtil.writeToDB(payPropertyList, TableName);
+        return AppConfig.getiReadAndWriteDB().writeToDB(payPropertyList);//HttpUtil.writeToDB(payPropertyList, TableName);
     }
 
     @Override

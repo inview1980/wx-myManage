@@ -10,8 +10,9 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 public final class PersonDetails {
-//    @ExcelProperty(index = 4)
+    @ExcelProperty(value = "_id")
     private int _id;
+
     @ExcelProperty(value = "姓名")
     private String name;
     @ExcelProperty(value = "电话")

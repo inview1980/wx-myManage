@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
+import javax.annotation.Resource;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,7 +21,7 @@ import java.util.Map;
 @EnableAsync
 public class TimedTask {
         private static int SaveDBNow = 0;//秒，倒计时
-    public static boolean isInit = true;
+//    public static boolean isInit = true;
 
     private static final Map<Integer, DBChangeSignEnum> signMap = new HashMap<Integer, DBChangeSignEnum>() {{
         for (DBChangeSignEnum value : DBChangeSignEnum.values()) {
@@ -36,6 +37,16 @@ public class TimedTask {
     public static void SetTableChanged(DBChangeSignEnum signEnum){
         signMap.get(signEnum.ordinal()).isChanged(object);
         SaveDBNow=0;//如果已标记数据库已更改，将修改远程数据库的计时置0
+    }
+
+    /**
+     * 将数据修改全部设置为否
+     */
+    public static void SetAllTableNotChanged(){
+        for (Map.Entry<Integer, DBChangeSignEnum> entry : signMap.entrySet()) {
+            entry.getValue().isNotChanged(object);
+        }
+        SaveDBNow=0;
     }
 
     //到指定时间后，判断数据库是否改变。如已改变，通知数据库更新程序

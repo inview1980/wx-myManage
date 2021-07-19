@@ -2,9 +2,13 @@ package com.example.mymanage.tool;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
+import com.example.mymanage.iface.IReadAndWriteDB;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.ResourceUtils;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -12,23 +16,22 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class FileDBUtil {
-    private static final String PATH = "src/main/resources/db/";
+public class FileDBUtil implements IReadAndWriteDB {
+    private static final String PATH = "db/";
+    private static final String Extension = ".dbTxt";
 
-    public static <T> List<T> getListFromDB(@NonNull Class<T> tClass) {
-        File file = new File(PATH + tClass.getSimpleName());
-        log.info("读取数据库文件{}",tClass.getSimpleName());
-        if (!file.exists()) {
-            return new ArrayList<>();
-        }
-        try(BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
+    @Override
+    public  <T> List<T> getListFromDB(@NonNull Class<T> tClass) {
+        try {
+            String resource = ResourceUtils.getURL("classpath:").getPath();
+            resource += tClass.getSimpleName() + Extension;
+            log.info("读取数据库文件{}", resource);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(new File(resource)), "UTF-8"));
             String tmpStr = reader.lines().collect(Collectors.joining());
             List<T> collection = JSON.parseArray(tmpStr, tClass);
-            if (collection == null) {
-                collection = new ArrayList<>();
-            }
-            return collection;
-        } catch (Exception e) {
+            reader.close();
+            return collection == null ? new ArrayList<>() : collection;
+        } catch (IOException e) {
             log.error(e.getLocalizedMessage());
             return new ArrayList<>();
         }
@@ -41,17 +44,22 @@ public class FileDBUtil {
      * @param tList
      * @return
      */
-    public static <T> boolean writeToDB(@NonNull List<T> tList) {
-        if(tList.size()==0) return true;
-        File file = new File(PATH + tList.get(0).getClass().getSimpleName());
-        String tmpStr = JSONArray.toJSONString(tList);
-        try(BufferedOutputStream os=new BufferedOutputStream(new FileOutputStream(file))){
-            os.write(tmpStr.getBytes());
-        }  catch (IOException e) {
+    @Override
+    public  <T> boolean writeToDB(@NonNull List<T> tList) {
+        if (tList.size() == 0) return true;
+        try {
+            String resource = ResourceUtils.getURL("classpath:").getPath();
+            resource += tList.get(0).getClass().getSimpleName() + Extension;
+            String tmpStr = JSONArray.toJSONString(tList);
+            BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(new File(resource)));
+            os.write(tmpStr.getBytes("UTF-8"));
+            os.flush();
+            os.close();
+            log.info("写数据库文件{}成功", resource);
+            return true;
+        } catch (IOException e) {
             log.error(e.getLocalizedMessage());
             return false;
         }
-        log.info("写数据库文件{}成功",tList.get(0).getClass().getSimpleName());
-        return true;
     }
 }

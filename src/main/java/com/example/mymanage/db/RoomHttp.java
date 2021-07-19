@@ -1,5 +1,7 @@
 package com.example.mymanage.db;
 
+import com.example.mymanage.AppConfig;
+import com.example.mymanage.iface.IReadAndWriteDB;
 import com.example.mymanage.iface.IRoomDB;
 import com.example.mymanage.iface.IWriteToDB;
 import com.example.mymanage.pojo.RoomDetails;
@@ -7,25 +9,26 @@ import com.example.mymanage.tool.FileDBUtil;
 import com.example.mymanage.tool.MyException;
 import com.example.mymanage.tool.TimedTask;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-@Slf4j
+@Slf4j@Component
 public class RoomHttp implements IRoomDB, IWriteToDB {
     private static List<RoomDetails> roomDetailsList;
-    private final String TableName = "room-details";
 
     @Override@Synchronized
     public List<RoomDetails> getAllList() {
         if (roomDetailsList == null) {
-//            roomDetailsList = HttpUtil.getListFromDB(RoomDetails.class, TableName);
-            roomDetailsList = FileDBUtil.getListFromDB(RoomDetails.class);
+            roomDetailsList = AppConfig.getiReadAndWriteDB().getListFromDB(RoomDetails.class);
         }
         return roomDetailsList;
     }
@@ -166,7 +169,7 @@ public class RoomHttp implements IRoomDB, IWriteToDB {
 
     @Override
     public boolean writeToDB() {
-        return FileDBUtil.writeToDB(roomDetailsList);//HttpUtil.writeToDB(roomDetailsList, TableName);
+        return AppConfig.getiReadAndWriteDB().writeToDB(roomDetailsList);
     }
 
     @Override

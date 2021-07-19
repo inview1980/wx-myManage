@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserDao {
     private final MyUserHttp myUserHttp;
+    private final TokenHttp tokenHttp;
 
     public MyToken modifyPassword(@NonNull String userName, @NonNull String oldPassword, @NonNull String newPassword, @NonNull String verificationCode) {
         if (myUserHttp.getAllList().stream().map(MyUser::getUserName).noneMatch(userName::equals)) {
@@ -35,7 +36,7 @@ public class UserDao {
         }
         String newPwd = EncryptUtil.decode(newPassword, key);
         if (myUserHttp.modifyPassword(userName, newPwd)) {
-            return TokenHttp.addToken();
+            return tokenHttp.addToken();
         }else {
             throw new MyException(HttpResultEnum.Error);
         }

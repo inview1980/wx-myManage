@@ -1,28 +1,26 @@
 package com.example.mymanage.db;
 
+import com.example.mymanage.AppConfig;
 import com.example.mymanage.http.Result;
 import com.example.mymanage.iface.IPersonDB;
 import com.example.mymanage.iface.IWriteToDB;
 import com.example.mymanage.pojo.PersonDetails;
-import com.example.mymanage.tool.FileDBUtil;
 import com.example.mymanage.tool.TimedTask;
 import lombok.NonNull;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@Slf4j
+@Slf4j@Component
 public class PersonHttp implements IPersonDB, IWriteToDB {
     private static List<PersonDetails> personDetailsList;
-    private final String TableName = "person-details";
 
     @Override@Synchronized
     public List<PersonDetails> getAllList() {
         if (personDetailsList == null) {
-//            personDetailsList = HttpUtil.getListFromDB(PersonDetails.class, TableName);
-            personDetailsList = FileDBUtil.getListFromDB(PersonDetails.class);
+            personDetailsList = AppConfig.getiReadAndWriteDB().getListFromDB(PersonDetails.class);
         }
         return personDetailsList;
     }
@@ -77,7 +75,7 @@ public class PersonHttp implements IPersonDB, IWriteToDB {
 
     @Override
     public boolean writeToDB() {
-        return FileDBUtil.writeToDB(personDetailsList);//HttpUtil.writeToDB(personDetailsList, TableName);
+        return AppConfig.getiReadAndWriteDB().writeToDB(personDetailsList);//HttpUtil.writeToDB(personDetailsList, TableName);
     }
 
     @Override

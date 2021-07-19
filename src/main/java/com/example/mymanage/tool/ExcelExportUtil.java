@@ -81,6 +81,7 @@ public class ExcelExportUtil {
                 Class<?> tClass = entry.getValue().get(0).getClass();
                 exportExport(getHead(tClass), getTitle(tClass), getValues(entry.getValue(), tClass), entry.getKey());
             }
+            log.info("数据写入文件成功");
         }
 
         private <T extends Object> String[] getHead(Class<T> tClass) {

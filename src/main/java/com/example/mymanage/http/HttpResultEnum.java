@@ -43,6 +43,7 @@ public enum HttpResultEnum {
     DecryptError(11000,"解密密码信息时发生错误"),
     Error(10098, "未知错误"),
     IOError(10099, "IO错误"),
+    AccessTokenPass(10100,"AccessToken过期或失效，请重新进入页面"),
     /**
      * 验证码过期
      */

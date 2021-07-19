@@ -2,6 +2,7 @@ package com.example.mymanage.db;
 
 import com.alibaba.fastjson.JSONArray;
 import com.example.mymanage.MainApplication;
+import com.example.mymanage.http.HttpUtil;
 import com.example.mymanage.iface.IPersonDB;
 import com.example.mymanage.pojo.PersonDetails;
 import junit.framework.TestCase;

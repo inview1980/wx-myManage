@@ -16,7 +16,7 @@ public enum DBChangeSignEnum {
     PayProperty(false, new PayPropertyHttp(), com.example.mymanage.pojo.PayProperty.class, PayPropertyHttp.class),
     MyUser(false, new MyUserHttp(), com.example.mymanage.pojo.MyUser.class, MyUserHttp.class),
     RentRecordSign(false, new RentRecordHttp(), RentalRecord.class, IRentRecordDB.class),
-    MyToken(false,new TokenHttp(), com.example.mymanage.http.MyToken.class,TokenHttp.class);
+    MyToken(false, new TokenHttp(), com.example.mymanage.http.MyToken.class, TokenHttp.class);
 
     private boolean isChange;
     private final IWriteToDB writeToDB;
@@ -35,6 +35,12 @@ public enum DBChangeSignEnum {
     public void isChanged(@NotNull Object object) {
         synchronized (object) {
             this.isChange = true;
+        }
+    }
+
+    public void isNotChanged(@NotNull Object object) {
+        synchronized (object) {
+            this.isChange = false;
         }
     }
 

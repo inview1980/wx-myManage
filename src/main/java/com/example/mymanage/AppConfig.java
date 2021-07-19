@@ -1,54 +1,77 @@
 package com.example.mymanage;
 
-import com.example.mymanage.db.PayPropertyHttp;
-import com.example.mymanage.db.PersonHttp;
-import com.example.mymanage.db.RentRecordHttp;
-import com.example.mymanage.db.RoomHttp;
+import com.example.mymanage.db.*;
 import com.example.mymanage.filter.TokenFilter;
-import com.example.mymanage.iface.IPayPropertyDB;
-import com.example.mymanage.iface.IPersonDB;
-import com.example.mymanage.iface.IRentRecordDB;
-import com.example.mymanage.iface.IRoomDB;
+import com.example.mymanage.http.HttpUtil;
+import com.example.mymanage.iface.*;
+import com.example.mymanage.tool.FileDBUtil;
 import com.example.mymanage.tool.StaticConfigData;
 import com.example.mymanage.tool.ReadExcel;
+import lombok.Synchronized;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.MultipartConfigFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import javax.servlet.MultipartConfigElement;
+
 @Configuration
 public class AppConfig implements WebMvcConfigurer {
+    @Value("server.tomcat.basedir")
+    private String tempPath;
+    private static IReadAndWriteDB iReadAndWriteDB;
 
-    @Bean
-    public IRentRecordDB iRentRecordDB() {
+//    @Bean@DependsOn("iReadAndWriteDB")
+//    public IRentRecordDB iRentRecordDB() {
+//        return new RentRecordHttp();
+//    }
+//
+//    @Bean@DependsOn("iReadAndWriteDB")
+//    public MyUserHttp myUserHttp() {
+//        return new MyUserHttp();
+//    }
+//
+//    @Bean@DependsOn("iReadAndWriteDB")
+//    public IRoomDB iRoomDB() {
+//        return new RoomHttp();
+//    }
+//
+//    @Bean@DependsOn("iReadAndWriteDB")
+//    public IPersonDB iPersonDB() {
+//        return new PersonHttp();
+//    }
+//
+//    @Bean@DependsOn("iReadAndWriteDB")
+//    public IPayPropertyDB payProperty() {
+//        return new PayPropertyHttp();
+//    }
+
+    @Synchronized
+    public static IReadAndWriteDB getiReadAndWriteDB() {
+        if(AppConfig.iReadAndWriteDB==null){
+            AppConfig.iReadAndWriteDB=new HttpUtil();
+//            AppConfig.iReadAndWriteDB=new FileDBUtil();
+        }
+        return AppConfig.iReadAndWriteDB;
+    }
+
+//    @Bean
+////    @DependsOn("iReadAndWriteDB")
+//    public TokenHttp tokenHttp() {
+//        this.tokenHttp = new TokenHttp();
+//        return tokenHttp;
+//    }
+//
+//    @Bean
+//    public ReadExcel ReadExcel() {
 //        return new ReadExcel();
-        return new RentRecordHttp();
-    }
+//    }
 
-    @Bean
-    public IRoomDB iRoomDB() {
-//        return new ReadExcel();
-        return new RoomHttp();
-    }
-
-    @Bean
-    public IPersonDB iPersonDB() {
-//        return new ReadExcel();
-        return new PersonHttp();
-    }
-
-    @Bean
-    public IPayPropertyDB payProperty() {
-//        return new ReadExcel();
-        return new PayPropertyHttp();
-    }
-
-    @Bean
-    public ReadExcel ReadExcel() {
-        return new ReadExcel();
-    }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -63,7 +86,9 @@ public class AppConfig implements WebMvcConfigurer {
 //                "/**/*.woff",
 //                "/**/*.ttf"
                 "/login/getVerificationCode",
-                "/user/reloadDBByNonVerify"
+                "/user/reloadDBByNonVerify",
+                "/user/getDebugState",
+                "/user/reReadRemoteDBByNonVerify"
         );
     }
 
@@ -71,4 +96,16 @@ public class AppConfig implements WebMvcConfigurer {
 //    public void init(){
 //        appInit.init(appInit);
 //    }
+
+    /**
+     * 配置springboot临时目录
+     *
+     * @return
+     */
+    @Bean
+    MultipartConfigElement multipartConfigElement() {
+        MultipartConfigFactory factory = new MultipartConfigFactory();
+        factory.setLocation(tempPath);
+        return factory.createMultipartConfig();
+    }
 }

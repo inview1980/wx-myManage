@@ -1,12 +1,25 @@
 package com.example.mymanage;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.example.mymanage.http.HttpResultEnum;
+import com.example.mymanage.http.HttpUtil;
 import com.example.mymanage.http.MyToken;
 import com.example.mymanage.pojo.MyUser;
+import com.example.mymanage.tool.MyException;
+import com.example.mymanage.tool.StaticConfigData;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.junit.Test;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
@@ -42,12 +55,27 @@ public class NormalTest {
     }
 
     @Test
-    public void test2(){
-        MyToken token=new MyToken();
-        String tmp=JSON.toJSONString(token);
-        System.out.println(tmp);
+    public void test2() throws URISyntaxException {
+        String url1 = StaticConfigData.AccessTokenURL;
+        url1 += StaticConfigData.AppID;
+        url1 += "&secret=";
+        url1 += StaticConfigData.AppSecret;
 
-        MyToken k2=JSON.parseObject(tmp,MyToken.class);
-        System.out.println(k2);
+        HttpGet post = new HttpGet(url1);
+
+        URI uri = post.getURI();
+        String url=uri.toString();
+        System.out.println(uri.getQuery());
+//        String s1=url.substring(0, url.indexOf("=")+1)+"new Access";
+//        System.out.println(s1);
+//        post.setURI(new URI(s1));
+//        System.out.println(post.getURI().toString());
+    }
+
+    @Test
+    public void file() throws IOException {
+        File path= File.createTempFile("updataFile",".xlsx" );
+        System.out.println(path.getAbsolutePath());
+        System.out.println(path.getPath());
     }
 }

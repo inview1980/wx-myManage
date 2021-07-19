@@ -28,7 +28,7 @@ public class ExcelExportUtilTest  {
         excel.add(users);
         excel.add(rrs);
         excel.build().write(new File("src/main/resources/db/tmp.xlsx"));
-//         new ExcelExportUtil(users, MyUser.class).exportExport();
+//         new ExcelExportUtil(users, MyUser.dbTxt.class).exportExport();
     }
 
     @Test

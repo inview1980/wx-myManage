@@ -1,5 +1,9 @@
 package com.example.mymanage.tool;
 
+import com.example.mymanage.AppConfig;
+import com.example.mymanage.pojo.DebugState;
+import lombok.val;
+
 public class StaticConfigData {
     public static final String DateFormatString = "yyyy-M-d";
     /**
@@ -10,7 +14,7 @@ public class StaticConfigData {
      * 秒，倒计时,到时后执行保存数据库
      * 默认修改数据5分钟后，将数据保存到远程数据库
      */
-    public static final int IntervalNumForSaveDB = 60 * 5;
+    public static final int IntervalNumForSaveDB = 10 * 5;
     /**
      * 指定时间后，判断验证码是否过期，默认90秒
      */
@@ -27,4 +31,25 @@ public class StaticConfigData {
     public static final String UPLoadFileUrl = "https://api.weixin.qq.com/tcb/uploadfile?access_token=";
     public static final String OpenIDUrl = "https://api.weixin.qq.com/sns/jscode2session?appid=";
     public static final String UpLoadFileNameFormatString = "yyyy-MM-dd(HH-mm-ss)";
+
+    private static DebugState debugState;
+
+    /**
+     * 从远程数据库读取数据，用于设置本地的调试状态
+     */
+    public static DebugState getDebugState(){
+        if(debugState==null){
+            val tmpLst= AppConfig.getiReadAndWriteDB().getListFromDB(DebugState.class);
+            if(tmpLst.size()>0){
+                debugState=tmpLst.get(0);
+            }else {
+                debugState=new DebugState();
+            }
+        }
+        return debugState;
+    }
+    public static void reloadDebugState(){
+        debugState=null;
+        getDebugState();
+    }
 }

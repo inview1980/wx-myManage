@@ -1,11 +1,14 @@
 package com.example.mymanage.http;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.example.mymanage.iface.IReadAndWriteDB;
 import com.example.mymanage.tool.MyException;
 import com.example.mymanage.tool.StaticConfigData;
 import com.example.mymanage.tool.TimedTask;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.http.client.config.RequestConfig;
@@ -17,24 +20,20 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.web.client.RestTemplate;
 
-import java.io.*;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
-public class HttpUtil {
+public class HttpUtil implements IReadAndWriteDB {
     private static String AccessToken = null;
     private static final Object object = new Object();
 
-    public static String getAccessToken() {
+    private String getAccessToken() {
         if (AccessToken == null) {
-            TimedTask.isInit = false;
             getAccessTokenFromHttp();
         }
         return AccessToken;
@@ -56,146 +55,139 @@ public class HttpUtil {
 ////        return get(sb.toString()).getString("openid");
 ////    }
 
-    public static JSONObject get(String url) {
+    private JSONObject get(String url) {
         return new HttpUtil().http(new HttpGet(url));
     }
 
-    public static JSONObject post(HttpRequestBase request) {
+    private JSONObject post(HttpRequestBase request) {
         return new HttpUtil().http(request);
     }
 
+    /**
+     * 将集合全部写入云数据库
+     *
+     * @param tList
+     * @param <T>
+     * @return
+     */
+    @Override
+    public <T> boolean writeToDB(@NonNull List<T> tList) {
+        if (tList.size() == 0) return true;
+        String tableName = tList.get(0).getClass().getSimpleName();
+        synchronized (object) {
+            controlDB(StaticConfigData.DBDeleteTableUrl, "collection_name", tableName);
+            if (!controlDB(StaticConfigData.DBAddTableUrl, "collection_name", tableName))
+                return false;
+
+            HttpPost post = new HttpPost(StaticConfigData.DBAddDBUrl + this.getAccessToken());
+            JSONObject json = new JSONObject();
+            json.put("env", StaticConfigData.EnvID);
+            StringBuilder query = new StringBuilder("db.collection(\\\"").append(tableName).append("\\\").add({data: ");
+            query.append(JSONArray.toJSONString(tList));
+            query.append("})");
+            try {
+                json.put("query", new String(query.toString().getBytes(), "UTF-8"));
+                post.setEntity(new StringEntity(json.toString(), "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                log.error("HttpUtil转换参数出错!");
+                throw new MyException(HttpResultEnum.ParameterChangeError);
+            }
+            JSONObject req = this.post(post);
+            boolean errcode = req.getInteger("errcode") == 0;
+            if (errcode) {
+                log.info("写数据库:" + tableName + "成功");
+            } else {
+                log.error("写数据库失败,code:" + req.getInteger("errcode") + ",MSG:" + req.getString("errmsg"));
+            }
+            return errcode;
+        }
+    }
+
 //    /**
-//     * 将集合全部写入云数据库
-//     *
-//     * @param tList
-//     * @param tableName 云数据库中指定的表名
-//     * @param <T>
-//     * @return
+//     * 上传文件到服务器，返回file_id
 //     */
-//    public static <T> boolean writeToDB(@NonNull List<T> tList,@NonNull String tableName) {
+//    public static String upLoadFile(@NonNull InputStream inputStream)  {
+//        SimpleDateFormat format = new SimpleDateFormat(StaticConfigData.UpLoadFileNameFormatString);
+//        String tmpFilePath = "tmp/" + format.format(new Date()) + ".xls";
 //        synchronized (object) {
-//            controlDB(StateData.getDBDeleteTableUrl(), "collection_name", tableName);
-//            if (!controlDB(StateData.getDBAddTableUrl(), "collection_name", tableName))
-//                return false;
-//
-//            HttpPost post = new HttpPost(StateData.getDBAddDBUrl() + HttpUtil.getAccessToken());
+//            HttpPost post = new HttpPost(StaticConfigData.UPLoadFileUrl + getAccessToken());
 //            JSONObject json = new JSONObject();
-//            json.put("env",StateData.getWXEnvId());
-//            StringBuilder query = new StringBuilder("db.collection(\\\"").append(tableName).append("\\\").add({data: ");
-//            query.append(JSONArray.toJSONString(tList));
-//            query.append("})");
-//            try {
-//                json.put("query", new String(query.toString().getBytes(), "UTF-8"));
-//                post.setEntity(new StringEntity(json.toString(), "UTF-8"));
-//            } catch (UnsupportedEncodingException e) {
-//                log.error("HttpUtil转换参数出错!");
-//            }
-//            try {
-//                JSONObject req = HttpUtil.post(post);
-//                boolean errcode = req.getInteger("errcode") == 0;
-//                if (errcode) {
-//                    log.info("写数据库:" + tableName + "成功");
-//                } else {
-//                    log.error("写数据库失败,code:" + req.getInteger("errcode") + ",MSG:" + req.getString("errmsg"));
+//            json.put("env", StaticConfigData.EnvID);
+//            json.put("path", tmpFilePath);
+//            post.setEntity(new StringEntity(json.toString(), "UTF-8"));
+//            JSONObject req = HttpUtil.post(post);
+//            if (req.getInteger("errcode") == 0) {
+//                if (upLoadFile(req, inputStream, tmpFilePath)) {
+//                    log.info("上传文件到服务器成功");
+//                    return req.getString("file_id");
 //                }
-//                return errcode;
-//            } catch (IOException e) {
-//                log.error("HttpUtil获取数据出错！");
 //            }
+//            throw new MyException(10000, "上传文件失败,获取Token失败，errCode:" + req.getInteger("errcode") + ",MSG:" + req.getString("errmsg"));
 //        }
-//        return false;
+//    }
+//
+//    private static boolean upLoadFile(JSONObject req, InputStream inputStream, String fileName) {
+//        RestTemplate restTemplate = new RestTemplate();
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+//        val map = new LinkedMultiValueMap<String, Object>();
+//        map.add("x-cos-security-token", req.getString("token"));
+//        map.add("Signature", req.getString("authorization"));
+//        map.add("x-cos-meta-fileid", req.getString("cos_file_id"));
+//        map.add("key", fileName);
+//
+//        map.add("file", file2Bytes(inputStream));
+//        val httpEntity = new org.springframework.http.HttpEntity<>(map, headers);
+//        ResponseEntity<Object> response = restTemplate.postForEntity(req.getString("url"), httpEntity, Object.class);
+//        if (response.getHeaders().containsKey("Location")) {
+//            return true;
+//        } else {
+//            throw new MyException(HttpResultEnum.UploadFileError);
+//        }
+//    }
+//
+//
+//    private static byte[] file2Bytes(InputStream inputStream) {
+//        byte[] buffer = null;
+//        try {
+//            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+//            byte[] b = new byte[1024 * 10];
+//            int n;
+//            while ((n = inputStream.read(b)) != -1) {
+//                bos.write(b, 0, n);
+//            }
+//            inputStream.close();
+//            bos.close();
+//            buffer = bos.toByteArray();
+//        } catch (IOException e) {
+//            log.error(e.getLocalizedMessage());
+//            throw new MyException(HttpResultEnum.UploadFileError);
+//        }
+//        return buffer;
 //    }
 
     /**
-     * 上传文件到服务器，返回file_id
+     * 删除、新建表格
+     *
+     * @param url
+     * @param key         删除和新建均为collection_name
+     * @param queryString 需执行的SQL语句
+     * @return
      */
-    public static String upLoadFile(@NonNull InputStream inputStream)  {
-        SimpleDateFormat format = new SimpleDateFormat(StaticConfigData.UpLoadFileNameFormatString);
-        String tmpFilePath = "tmp/" + format.format(new Date()) + ".xls";
-        synchronized (object) {
-            HttpPost post = new HttpPost(StaticConfigData.UPLoadFileUrl + getAccessToken());
-            JSONObject json = new JSONObject();
-            json.put("env", StaticConfigData.EnvID);
-            json.put("path", tmpFilePath);
-            post.setEntity(new StringEntity(json.toString(), "UTF-8"));
-            JSONObject req = HttpUtil.post(post);
-            if (req.getInteger("errcode") == 0) {
-                if (upLoadFile(req, inputStream, tmpFilePath)) {
-                    log.info("上传文件到服务器成功");
-                    return req.getString("file_id");
-                }
-            }
-            throw new MyException(10000, "上传文件失败,获取Token失败，errCode:" + req.getInteger("errcode") + ",MSG:" + req.getString("errmsg"));
-        }
-    }
-
-    private static boolean upLoadFile(JSONObject req, InputStream inputStream, String fileName) {
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-        val map = new LinkedMultiValueMap<String, Object>();
-        map.add("x-cos-security-token", req.getString("token"));
-        map.add("Signature", req.getString("authorization"));
-        map.add("x-cos-meta-fileid", req.getString("cos_file_id"));
-        map.add("key", fileName);
-
-        map.add("file", file2Bytes(inputStream));
-        val httpEntity = new org.springframework.http.HttpEntity<>(map, headers);
-        ResponseEntity<Object> response = restTemplate.postForEntity(req.getString("url"), httpEntity, Object.class);
-        if (response.getHeaders().containsKey("Location")) {
-            return true;
-        } else {
-            throw new MyException(HttpResultEnum.UploadFileError);
-        }
-    }
-
-
-    private static byte[] file2Bytes(InputStream inputStream) {
-        byte[] buffer = null;
+    private boolean controlDB(String url, String key, String queryString) {
+        HttpPost post = new HttpPost(url + this.getAccessToken());
+        JSONObject json = new JSONObject();
+        json.put("env", StaticConfigData.EnvID);
+        json.put(key, queryString);
         try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            byte[] b = new byte[1024 * 10];
-            int n;
-            while ((n = inputStream.read(b)) != -1) {
-                bos.write(b, 0, n);
-            }
-            inputStream.close();
-            bos.close();
-            buffer = bos.toByteArray();
-        } catch (IOException e) {
+            post.setEntity(new StringEntity(json.toString()));
+        } catch (UnsupportedEncodingException e) {
             log.error(e.getLocalizedMessage());
-            throw new MyException(HttpResultEnum.UploadFileError);
+            throw new MyException(HttpResultEnum.ParameterChangeError);
         }
-        return buffer;
+        JSONObject req = this.post(post);
+        return req.getInteger("errcode") == 0;
     }
-
-//    /**
-//     * 删除、新建表格
-//     *
-//     * @param url
-//     * @param key         删除和新建均为collection_name
-//     * @param queryString 需执行的SQL语句
-//     * @return
-//     */
-//    private static boolean controlDB(String url, String key, String queryString) {
-//        HttpPost post = new HttpPost(url + getAccessToken());
-//        JSONObject json = new JSONObject();
-//        json.put("env", StateData.getWXEnvId());
-//        json.put(key, queryString);
-//        try {
-//            post.setEntity(new StringEntity(json.toString()));
-//        } catch (UnsupportedEncodingException e) {
-//            log.error(e.getLocalizedMessage());
-//            throw new MyException(HttpResultEnum.ParameterChangeError);
-//        }
-//        try {
-//            JSONObject req = HttpUtil.post(post);
-//            return req.getInteger("errcode") == 0;
-//        } catch (IOException e) {
-//            log.error("重写数据库出错");
-//            throw new MyException(HttpResultEnum.POSTError);
-//        }
-//    }
 
 
     private JSONObject http(HttpRequestBase request) {
@@ -216,10 +208,12 @@ public class HttpUtil {
                     //如果AccessToken过期，重新申请
                     if (res.containsKey("errcode")) {
                         int code = res.getInteger("errcode");
-                        log.error("http错误码{}",code);
-                        if (code == 42001 || code == 40014) {
+                        if (code != 0)
+                            log.error("http错误码{}", code);
+                        if (code == 42001 || code == 40014) {//42001:AccessToken过期,40014:AccessToken 不合法
                             getAccessTokenFromHttp();
-                            http(request);
+                            throw new MyException(HttpResultEnum.AccessTokenPass);
+//                            http(resetUrl(request));
                         }
                     }
                 }
@@ -232,9 +226,21 @@ public class HttpUtil {
     }
 
     /**
+     * 重新注入数据库的AccessToken
+     *
+     * @param request
+     */
+    @SneakyThrows
+    private HttpRequestBase resetUrl(HttpRequestBase request) {
+        String url = request.getURI().toString();
+        request.setURI(new URI(url.substring(0, url.indexOf("=") + 1) + this.getAccessToken()));
+        return request;
+    }
+
+    /**
      * 获取数据库的操作accessToken
      */
-    public static void getAccessTokenFromHttp() {
+    private void getAccessTokenFromHttp() {
         String url = StaticConfigData.AccessTokenURL;
         url += StaticConfigData.AppID;
         url += "&secret=";
@@ -248,67 +254,64 @@ public class HttpUtil {
         }
     }
 
-//    public static <T> List<T> getListFromDB(Class<T> tClass, String tableName) {
-//        List<T> result = new ArrayList<>();
-//        synchronized (object) {
-//            getListFromDB(tClass, tableName, result, 0);
-//            return result;
-//        }
-//    }
-//
-//    /**
-//     * 执行从数据库获取数据的操作
-//     *
-//     * @param tClass    需转换成的类
-//     * @param tableName
-//     * @param <T>
-//     * @return
-//     */
-//    public static <T> void getListFromDB(@NonNull Class<T> tClass,@NonNull String tableName,@NonNull List<T> result,
-//                                         int OffsetRide) {
-//        int limitNum = 1000;
-//        StringBuilder sb = new StringBuilder(StateData.getDBQueryUrl() );
-//        sb.append(HttpUtil.getAccessToken());
-//        HttpPost post = new HttpPost(sb.toString());
-//        JSONObject json = new JSONObject();
-//        json.put("env", StateData.getWXEnvId());
-//        String queryString = String.format("db.collection(\\\"%s\\\").limit(%d).skip(%d).get()", tableName, limitNum,
-//                OffsetRide * limitNum);
-//        json.put("query", queryString);
-//        try {
-//            post.setEntity(new StringEntity(json.toString()));
-//        } catch (UnsupportedEncodingException e) {
-//            log.error(tClass.getSimpleName() + "转换参数出错!");
-//            throw new MyException(HttpResultEnum.ParameterChangeError);
-//        }
-//        try {
-//            JSONObject req = HttpUtil.post(post);
-//            if (req.getInteger("errcode") != 0) {
-//                log.error(req.getString("errmsg"));
-//            }
-//            String data = req.getString("data");
-//            if (null == data) {
-//                log.error("数据库{}不存在！",tableName);
-//                data = "";
-//            }
-//            //将读取的数据转换成对象列表
-//            data = data.replace("[\"{", "[{").replace("}\"]", "}]");
-//            data = data.replace("\\", "").replace("}\",\"{", "},{");
-//            List<T> collection = JSON.parseArray(data, tClass);
-//            if(collection==null){
-//                return;
-//            }
-//            log.info("读表" + tableName + "数据从" + OffsetRide * limitNum + "到" + (OffsetRide * limitNum + collection.size() +
-//                    "项"));
-//            result.addAll(collection);
-//            //判断是否读完毕
-//            JSONObject pager = req.getJSONObject("pager");
-//            if (pager.getInteger("Total") <= pager.getInteger("Offset") * pager.getInteger("Limit"))
-//                getListFromDB(tClass, tableName, result, ++OffsetRide);
-//
-//        } catch (IOException e) {
-//            log.error(tClass.getSimpleName() + "获取数据出错！");
-//        }
-//    }
+    @Override
+    public <T> List<T> getListFromDB(@NonNull Class<T> tClass) {
+        List<T> result = new ArrayList<>();
+        synchronized (object) {
+            getListFromDB(tClass, tClass.getSimpleName(), result, 0);
+            return result;
+        }
+    }
+
+    /**
+     * 执行从数据库获取数据的操作
+     *
+     * @param tClass    需转换成的类
+     * @param tableName
+     * @param <T>
+     * @return
+     */
+    private <T> void getListFromDB(@NonNull Class<T> tClass, @NonNull String tableName, @NonNull List<T> result,
+                                   int OffsetRide) {
+        int limitNum = 1000;
+        StringBuilder sb = new StringBuilder(StaticConfigData.DBQueryUrl);
+        sb.append(this.getAccessToken());
+        HttpPost post = new HttpPost(sb.toString());
+        JSONObject json = new JSONObject();
+        json.put("env", StaticConfigData.EnvID);
+        String queryString = String.format("db.collection(\\\"%s\\\").limit(%d).skip(%d).get()", tableName, limitNum,
+                OffsetRide * limitNum);
+        json.put("query", queryString);
+        try {
+            post.setEntity(new StringEntity(json.toString()));
+        } catch (UnsupportedEncodingException e) {
+            log.error(tClass.getSimpleName() + "转换参数出错!");
+            throw new MyException(HttpResultEnum.ParameterChangeError);
+        }
+        JSONObject req = this.post(post);
+        if (req.getInteger("errcode") != 0) {
+            log.error(req.getString("errmsg"));
+        }
+        String data = req.getString("data");
+        if (null == data) {
+            log.error("数据库{}不存在！", tableName);
+            data = "";
+        }
+        //将读取的数据转换成对象列表
+        data = data.replace("[\"{", "[{").replace("}\"]", "}]");
+        data = data.replace("\\", "").replace("}\",\"{", "},{");
+        List<T> collection = JSON.parseArray(data, tClass);
+        if (collection == null) {
+            return;
+        }
+        log.info("读表" + tableName + "数据从" + OffsetRide * limitNum + "到" + (OffsetRide * limitNum + collection.size() +
+                "项"));
+        result.addAll(collection);
+        //判断是否读完毕
+        JSONObject pager = req.getJSONObject("pager");
+        if (pager.getInteger("Total") <= pager.getInteger("Offset") * pager.getInteger("Limit"))
+            getListFromDB(tClass, tableName, result, ++OffsetRide);
+
+    }
 
 }

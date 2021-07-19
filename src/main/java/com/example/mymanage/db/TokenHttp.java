@@ -1,19 +1,19 @@
 package com.example.mymanage.db;
 
+import com.alibaba.fastjson.JSON;
+import com.example.mymanage.AppConfig;
 import com.example.mymanage.http.MyToken;
 import com.example.mymanage.iface.IGetAllList;
-import com.example.mymanage.iface.IRoomDB;
 import com.example.mymanage.iface.IWriteToDB;
-import com.example.mymanage.tool.FileDBUtil;
+import com.example.mymanage.tool.StaticConfigData;
 import com.example.mymanage.tool.TimedTask;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 @Slf4j@Component
 public class TokenHttp  implements IWriteToDB, IGetAllList<MyToken> {
@@ -35,8 +35,12 @@ public class TokenHttp  implements IWriteToDB, IGetAllList<MyToken> {
     /**
      * 检查Token是否一致
      */
-    public static Optional<MyToken> checkToken(String token) {
-        return tokenHttp.getAllList().stream().filter(t -> t.checkToken(token)).findFirst();
+    public static boolean checkToken(String token) {
+        if(StaticConfigData.getDebugState().isDebug()){
+            log.info(JSON.toJSONString(tokenHttp.getAllList().stream().map(MyToken::getToken).collect(Collectors.toList()))+"::"+token);
+        }
+        Optional<MyToken> token1 = tokenHttp.getAllList().stream().filter(t -> t.checkToken(token)).findFirst();
+        return token1.isPresent();
     }
 
     public static MyToken addToken() {
@@ -48,7 +52,7 @@ public class TokenHttp  implements IWriteToDB, IGetAllList<MyToken> {
 
     @Override
     public boolean writeToDB() {
-        return FileDBUtil.writeToDB(tokenList);
+        return AppConfig.getiReadAndWriteDB().writeToDB(tokenList);
     }
 
     @Override
@@ -61,7 +65,7 @@ public class TokenHttp  implements IWriteToDB, IGetAllList<MyToken> {
     public List<MyToken> getAllList() {
         synchronized (object){
             if(tokenList==null){
-                tokenList=new Vector<>(FileDBUtil.getListFromDB(MyToken.class));
+                tokenList=new Vector<>(AppConfig.getiReadAndWriteDB().getListFromDB(MyToken.class));
             }
         }
         return tokenList;

@@ -1,26 +1,30 @@
 package com.example.mymanage.controller;
 
 import com.alibaba.fastjson.JSONObject;
-import com.example.mymanage.http.HttpResultEnum;
-import com.example.mymanage.http.HttpUtil;
+import com.example.mymanage.db.DBChangeSignEnum;
 import com.example.mymanage.http.Result;
+import com.example.mymanage.iface.IGetAllList;
+import com.example.mymanage.iface.IWriteToDB;
+import com.example.mymanage.tool.MyException;
 import com.example.mymanage.tool.ReadExcel;
+import com.example.mymanage.tool.StaticConfigData;
+import com.example.mymanage.tool.TimedTask;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.StandardCopyOption;
 import java.util.Base64;
-import java.util.Map;
+import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -28,6 +32,10 @@ import java.util.Map;
 @Slf4j
 public class FileController {
     private final ReadExcel readExcel;
+    private final ApplicationContext context;
+
+    @Value("${resource.default-db-file}")
+    private String defaultDBFilePath;
 
     @PostMapping("/getExcel")
     Result getExcel() {
@@ -55,15 +63,44 @@ public class FileController {
     Result uploadDBFile(@RequestBody JSONObject jsonObject) throws IOException {
         String code = jsonObject.getString("data");
         byte[] bytes = Base64.getDecoder().decode(code);
-        File file = new File("f:\\db222.xlsx");
+        File path = File.createTempFile("updataFile", ".xlsx");
         java.nio.file.Files.copy(
                 new ByteArrayInputStream(bytes),
-                file.toPath(),
+                path.toPath(),
                 StandardCopyOption.REPLACE_EXISTING);
-
-//        ByteArrayInputStream bis=new ByteArrayInputStream(bytes);
-        //直接读inputStream未知错误，故先保存到文件再读
-        readExcel.readXlsToDB(file.getPath());
+        log.info("保存上传文件到临时文件：{}", path.getAbsolutePath());
+        //直接读inputStream未知错误，且easyExcel读流时也是先保存到文件再读取内容，故先保存到文件再读
+        readExcel.readXlsToDB(path.getAbsolutePath());
         return Result.Ok();
+    }
+
+    @PostMapping("/reloadDB")
+    Result reloadDB() {
+        readExcel.readXlsToDB(defaultDBFilePath);
+        return Result.Ok();
+    }
+
+    @PostMapping("/reloadDBByNonVerify")
+    @SneakyThrows
+    Result reloadDBByNonVerify() {
+        return reloadDB();
+    }
+
+    /**
+     * 重新加载远程数据库
+     */
+    @PostMapping("/reloadRemoteDB")
+    Result reloadRemoteDB() {
+        for (DBChangeSignEnum value : DBChangeSignEnum.values()) {
+            ((IWriteToDB) context.getBean(value.getBeanClass())).removeDB();
+        }
+        TimedTask.SetAllTableNotChanged();//将数据修改全部设置为否
+        StaticConfigData.reloadDebugState();//重读DebugState参数
+        return Result.Ok();
+    }
+
+    @PostMapping("/reReadRemoteDBByNonVerify")
+    Result reReadRemoteDBByNonVerify() {
+        return reloadRemoteDB();
     }
 }

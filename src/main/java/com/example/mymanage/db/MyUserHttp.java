@@ -1,5 +1,7 @@
 package com.example.mymanage.db;
 
+import com.alibaba.fastjson.JSON;
+import com.example.mymanage.AppConfig;
 import com.example.mymanage.http.HttpResultEnum;
 import com.example.mymanage.iface.IGetAllList;
 import com.example.mymanage.iface.IWriteToDB;
@@ -9,16 +11,15 @@ import lombok.NonNull;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-@Component
 @Slf4j
+@Component
 public class MyUserHttp implements IWriteToDB, IGetAllList<MyUser> {
-    private final String TableName = "My-User";
     private static List<MyUser> myUserList;
 
     @Synchronized
@@ -26,8 +27,7 @@ public class MyUserHttp implements IWriteToDB, IGetAllList<MyUser> {
     public List<MyUser> getAllList() {
         if (myUserList == null) {
             try {
-//                val tmpLst = HttpUtil.getListFromDB(MyUser.class, TableName);
-                val tmpLst = FileDBUtil.getListFromDB(MyUser.class);
+                val tmpLst = AppConfig.getiReadAndWriteDB().getListFromDB(MyUser.class);
                 for (MyUser user : tmpLst) {
                     String decode = EncryptUtil.decode(user.getPassword(), user.getKey());
                     user.setPassword(decode);
@@ -51,17 +51,20 @@ public class MyUserHttp implements IWriteToDB, IGetAllList<MyUser> {
             newUser.setKey(key);
             tmpLst.add(newUser);
         }
-        return FileDBUtil.writeToDB(tmpLst);// HttpUtil.writeToDB(tmpLst, TableName);
+        return AppConfig.getiReadAndWriteDB().writeToDB(tmpLst);
     }
 
     @Override
     public void removeDB() {
         myUserList = null;
         log.info("数据已清空");
-
     }
 
     public boolean checkUserPassword(@NonNull String username, @NonNull String password) {
+        if (StaticConfigData.getDebugState().isDebug()) {
+            log.info(JSON.toJSONString(getAllList().stream().collect(Collectors.toMap(MyUser::getUserName,MyUser::getPassword))));
+            log.info("用户名：{},密码：{}", username, password);
+        }
         return getAllList().stream().anyMatch(user -> username.equals(user.getUserName()) && password.equals(user.getPassword()));
     }
 

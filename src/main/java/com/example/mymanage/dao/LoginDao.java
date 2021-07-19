@@ -18,6 +18,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class LoginDao {
     private final MyUserHttp myUserHttp;
+    private final TokenHttp tokenHttp;
 
     /**
      * 使用verificationCode从后台获取相对应的密码解密pwd,再验证用户名和密码
@@ -34,10 +35,13 @@ public class LoginDao {
             throw new MyException(HttpResultEnum.VerificationCodeEndTime);
         }
         String password = EncryptUtil.decode(pwd, key);
+        if(password==null||"".equals(password)){
+            throw new MyException(HttpResultEnum.PasswordError);
+        }
         VerificationCodeUtil.deleteKey(verificationCode);
         boolean isOk = myUserHttp.checkUserPassword(userName, password);
         if (isOk) {
-            return TokenHttp.addToken();
+            return tokenHttp.addToken();
         } else {
             throw new MyException(HttpResultEnum.PasswordError);
         }

@@ -13,6 +13,7 @@ import lombok.*;
 @NoArgsConstructor
 @Data
 public class RoomDetails {
+    @ExcelProperty(value = "_id")
     private String _id;
 
     /**

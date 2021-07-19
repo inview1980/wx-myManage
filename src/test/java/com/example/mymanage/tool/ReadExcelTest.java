@@ -54,7 +54,7 @@ public class ReadExcelTest extends TestCase {
 
     @Test
     public void readXls() throws IOException {
-        readExcel.readXls();
+        readExcel.readXls("f:\\db.xlsx");
         val lst = myUserHttp.getAllList();
     }
 
